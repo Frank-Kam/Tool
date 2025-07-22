@@ -2,24 +2,41 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>抽籤工具</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      overscroll-behavior: none;
+    }
+    button {
+      min-height: 48px;
+    }
+    textarea, input[type="number"] {
+      font-size: 14px;
+    }
+    @media (min-width: 640px) {
+      textarea, input[type="number"] {
+        font-size: 16px;
+      }
+    }
+  </style>
 </head>
-<body class="bg-gray-100 p-8">
-  <div class="max-w-xl mx-auto bg-white p-6 rounded-xl shadow space-y-4">
-    <h1 class="text-2xl font-bold">抽籤工具</h1>
+<body class="bg-gray-100 p-4 sm:p-8 min-h-screen">
+  <div class="max-w-xl mx-auto bg-white p-4 sm:p-6 rounded-xl shadow space-y-4">
+    <h1 class="text-xl sm:text-2xl font-bold">抽籤工具</h1>
 
     <label class="block font-medium">輸入籤項（每行一個）：</label>
-    <textarea id="inputItems" class="w-full border p-2 rounded h-40" placeholder=""></textarea>
+    <textarea id="inputItems" class="w-full border p-2 rounded h-40 resize-y text-sm sm:text-base" placeholder="輸入每行一個籤項，例如：&#10;選項1&#10;選項2&#10;選項3" aria-label="輸入籤項"></textarea>
 
     <label class="block font-medium mt-2">抽出幾個：</label>
-    <input id="drawCount" type="number" class="w-full border p-2 rounded" value="1" min="1">
+    <input id="drawCount" type="number" class="w-full border p-2 rounded text-sm sm:text-base" value="1" min="1" aria-label="選擇抽出數量">
 
-    <button onclick="drawLots()" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
+    <button onclick="drawLots()" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 text-sm sm:text-base">
       開始抽籤
     </button>
 
-    <div id="resultArea" class="mt-4"></div>
+    <div id="resultArea" class="mt-4 text-center"></div>
   </div>
 
   <script>
@@ -29,19 +46,30 @@
       const resultArea = document.getElementById('resultArea');
 
       let items = raw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+      if (items.length === 0) {
+        resultArea.innerHTML = `<p class="text-red-600">請輸入至少一個籤項！</p>`;
+        return;
+      }
+      if (count < 1) {
+        resultArea.innerHTML = `<p class="text-red-600">抽出數量必須至少為 1！</p>`;
+        return;
+      }
       if (items.length < count) {
         resultArea.innerHTML = `<p class="text-red-600">項目數不足，無法抽出 ${count} 筆。</p>`;
         return;
       }
 
-      // 打亂順序
-      let shuffled = items.sort(() => Math.random() - 0.5);
-      let selected = shuffled.slice(0, count);
+      // Fisher-Yates 洗牌算法
+      for (let i = items.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [items[i], items[j]] = [items[j], items[i]];
+      }
+      let selected = items.slice(0, count);
 
       resultArea.innerHTML = `
-        <h2 class="text-xl font-bold text-green-700">🎉 抽籤結果：</h2>
+        <h2 class="text-lg sm:text-xl font-bold text-green-700">🎉 抽籤結果：</h2>
         <ul class="list-disc list-inside mt-2 space-y-1">
-          ${selected.map(item => `<li class="text-lg">${item}</li>`).join('')}
+          ${selected.map(item => `<li class="text-base sm:text-lg">${item}</li>`).join('')}
         </ul>
       `;
     }

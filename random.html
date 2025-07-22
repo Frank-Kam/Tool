@@ -2,30 +2,49 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>亂數產生器</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      overscroll-behavior: none;
+    }
+    button {
+      min-height: 48px;
+    }
+    input[type="number"] {
+      font-size: 14px;
+    }
+    @media (min-width: 640px) {
+      input[type="number"] {
+        font-size: 16px;
+      }
+    }
+  </style>
 </head>
-<body class="bg-gray-100 p-8">
-  <div class="max-w-xl mx-auto bg-white p-6 rounded-xl shadow space-y-4">
-    <h1 class="text-2xl font-bold">亂數產生器</h1>
+<body class="bg-gray-100 p-4 sm:p-8 min-h-screen">
+  <div class="max-w-xl mx-auto bg-white p-4 sm:p-6 rounded-xl shadow space-y-4">
+    <h1 class="text-xl sm:text-2xl font-bold">亂數產生器</h1>
 
     <div class="space-y-2">
       <label class="block font-medium">包含的字元：</label>
-      <label><input type="checkbox" id="includeUppercase" class="mr-2">大寫 (A-Z)</label><br>
-      <label><input type="checkbox" id="includeLowercase" class="mr-2">小寫 (a-z)</label><br>
-      <label><input type="checkbox" id="includeNumbers" class="mr-2" checked>數字 (0-9)</label><br>
-      <label><input type="checkbox" id="includeSymbols" class="mr-2">常見符號 (!?@-_%)</label>
+      <div class="flex flex-col sm:flex-row sm:gap-4">
+        <label class="flex items-center"><input type="checkbox" id="includeUppercase" class="mr-2" aria-label="包含大寫字母">大寫 (A-Z)</label>
+        <label class="flex items-center"><input type="checkbox" id="includeLowercase" class="mr-2" aria-label="包含小寫字母">小寫 (a-z)</label>
+        <label class="flex items-center"><input type="checkbox" id="includeNumbers" class="mr-2" checked aria-label="包含數字">數字 (0-9)</label>
+        <label class="flex items-center"><input type="checkbox" id="includeSymbols" class="mr-2" aria-label="包含常見符號">常見符號 (!?@-_%)</label>
+      </div>
     </div>
 
     <div class="space-y-2">
       <label class="block font-medium mt-2">每組長度：</label>
-      <input id="lengthInput" type="number" class="w-full border p-2 rounded" value="16" min="1">
+      <input id="lengthInput" type="number" class="w-full border p-2 rounded text-sm sm:text-base" value="16" min="1" aria-label="每組亂數長度">
 
-      <label class="block font-medium">產生組數：</label>
-      <input id="countInput" type="number" class="w-full border p-2 rounded" value="5" min="1">
+      <label class="block font-medium mt-2">產生組數：</label>
+      <input id="countInput" type="number" class="w-full border p-2 rounded text-sm sm:text-base" value="5" min="1" aria-label="產生亂數組數">
     </div>
 
-    <button onclick="generateRandomStrings()" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
+    <button onclick="generateRandomStrings()" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 text-sm sm:text-base">
       產生亂數
     </button>
 
@@ -42,6 +61,15 @@
       const count = parseInt(document.getElementById('countInput').value);
       const resultArea = document.getElementById('resultArea');
 
+      if (length < 1 || isNaN(length)) {
+        resultArea.innerHTML = `<p class="text-red-600">每組長度必須至少為 1！</p>`;
+        return;
+      }
+      if (count < 1 || isNaN(count)) {
+        resultArea.innerHTML = `<p class="text-red-600">產生組數必須至少為 1！</p>`;
+        return;
+      }
+
       let charset = '';
       if (uppercase) charset += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
       if (lowercase) charset += 'abcdefghijklmnopqrstuvwxyz';
@@ -49,29 +77,26 @@
       if (symbols) charset += '!?@-_%';
 
       if (!charset) {
-        resultArea.innerHTML = `<p class="text-red-600">請至少選一種字元類型。</p>`;
+        resultArea.innerHTML = `<p class="text-red-600">請至少選一種字元類型！</p>`;
         return;
       }
 
       const results = [];
-
       for (let i = 0; i < count; i++) {
-        let chars = [];
+        let result = '';
         for (let j = 0; j < length; j++) {
-          const randChar = charset[Math.floor(Math.random() * charset.length)];
-          chars.push(randChar);
+          const randIndex = Math.floor(Math.random() * charset.length);
+          result += charset[randIndex];
         }
-        // 打亂順序
-        const shuffled = chars.sort(() => Math.random() - 0.5).join('');
-        results.push(shuffled);
+        results.push(result);
       }
 
-      resultArea.innerHTML = results.map(r =>
-        `<div class="bg-gray-100 p-2 rounded border flex justify-between items-center">
-          <code class="text-blue-800 break-all">${r}</code>
-          <button onclick="navigator.clipboard.writeText('${r}')" class="text-sm text-blue-600 hover:underline ml-4">複製</button>
-        </div>`
-      ).join('');
+      resultArea.innerHTML = results.map(r => `
+        <div class="bg-gray-100 p-2 rounded border flex justify-between items-center">
+          <code class="text-blue-800 break-all text-sm sm:text-base">${r}</code>
+          <button onclick="navigator.clipboard.writeText('${r}').then(() => alert('已複製到剪貼簿！'))" class="text-sm text-blue-600 hover:underline ml-2 sm:ml-4">複製</button>
+        </div>
+      `).join('');
     }
   </script>
 </body>

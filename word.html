@@ -1,47 +1,76 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>🧹 文字字數統計</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      overscroll-behavior: none;
+    }
+    button {
+      min-height: 48px;
+    }
+    textarea {
+      font-size: 14px;
+    }
+    pre {
+      font-size: 14px;
+    }
+    @media (min-width: 640px) {
+      textarea, pre {
+        font-size: 16px;
+      }
+    }
+  </style>
 </head>
-<body class="bg-gray-100 p-6">
-  <div class="max-w-xl mx-auto bg-white p-6 rounded-xl shadow">
-    <h1 class="text-2xl font-bold mb-4">🧹 文字字數統計</h1>
-    <textarea id="textInput" rows="10" class="w-full p-2 border rounded mb-4" placeholder="輸入文字..."></textarea>
-    <button onclick="analyzeText()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">統計</button>
-    <pre id="output" class="mt-4 whitespace-pre-wrap bg-gray-50 p-4 rounded shadow"></pre>
+<body class="bg-gray-100 p-4 sm:p-6 min-h-screen">
+  <div class="max-w-xl mx-auto bg-white p-4 sm:p-6 rounded-xl shadow space-y-4">
+    <h1 class="text-xl sm:text-2xl font-bold mb-4">🧹 文字字數統計</h1>
+    <textarea id="textInput" rows="10" class="w-full p-2 border rounded mb-4 resize-y text-sm sm:text-base" placeholder="輸入文字..." aria-label="輸入文字以進行字數統計"></textarea>
+    <button onclick="analyzeText()" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm sm:text-base">統計</button>
+    <pre id="output" class="mt-4 whitespace-pre-wrap bg-gray-50 p-4 rounded shadow text-sm sm:text-base"></pre>
+  </div>
 
-    <script>
-      function analyzeText() {
-        const text = document.getElementById("textInput").value;
-        let zh = 0, en = 0, other = 0, punc = 0;
+  <script>
+    function analyzeText() {
+      const text = document.getElementById("textInput").value;
+      const output = document.getElementById("output");
 
-        for (let ch of text) {
-          if (/[\u4e00-\u9fff]/.test(ch)) {
-            zh++;
-          } else if (/[A-Za-z]/.test(ch)) {
-            en++;
-          } else if (/\s/.test(ch)) {
-            // 空白不計算
-          } else {
-            other++;
-          }
+      if (!text.trim()) {
+        output.textContent = '請輸入文字！';
+        output.classList.add('text-red-600');
+        return;
+      }
 
-          // 判斷是否為標點符號
-          if (/[\p{P}\p{S}]/u.test(ch)) {
-            punc++;
-          }
+      let zh = 0, en = 0, other = 0, punc = 0, spaces = 0;
+
+      for (let ch of text) {
+        if (/[\u4e00-\u9fff]/.test(ch)) {
+          zh++;
+        } else if (/[A-Za-z]/.test(ch)) {
+          en++;
+        } else if (/\s/.test(ch)) {
+          spaces++;
+        } else {
+          other++;
         }
 
-        document.getElementById("output").textContent =
-          `中文：${zh} 字\n` +
-          `英文：${en} 字\n` +
-          `其他語言或符號：${other} 字\n` +
-          `標點符號總數：${punc}\n` +
-          `總字數：${zh + en + other}`;
+        if (/[\p{P}\p{S}]/u.test(ch)) {
+          punc++;
+        }
       }
-    </script>
-  </div>
+
+      output.classList.remove('text-red-600');
+      output.textContent =
+        `中文：${zh} 字\n` +
+        `英文：${en} 字\n` +
+        `其他語言或符號：${other} 字\n` +
+        `標點符號總數：${punc}\n` +
+        `空白字符：${spaces}\n` +
+        `總字數：${zh + en + other + spaces}`;
+    }
+  </script>
 </body>
 </html>
