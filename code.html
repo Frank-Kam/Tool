@@ -8,16 +8,17 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.12.1/JsBarcode.all.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* 確保 canvas 和 svg 在小螢幕上縮放 */
-    #qrcodeCanvas, #barcodeSvg {
+    #qrcodeCanvas {
+      width: 100%;
+      height: auto;
+    }
+    #barcodeSvg {
       max-width: 100%;
       height: auto;
     }
-    /* 確保按鈕在手機上易於點擊 */
     button {
       min-height: 48px;
     }
-    /* 防止鍵盤彈出時頁面滾動問題 */
     body {
       overscroll-behavior: none;
     }
@@ -34,10 +35,23 @@
       <option value="barcode">條碼</option>
     </select>
 
-    <!-- 通用輸入區（QR + 條碼） -->
+    <!-- 通用輸入區 -->
     <div id="commonInputSection" class="mb-4">
       <label class="block mb-2 font-medium">輸入資料：</label>
       <input id="inputText" type="text" class="w-full border p-2 rounded text-sm sm:text-base" placeholder="輸入文字、數字、網址等">
+    </div>
+
+    <!-- QR Code 大小選擇 -->
+    <div id="qrSizeContainer" class="mb-4">
+      <label class="block mb-2 font-medium">圖片畫質：</label>
+      <select id="qrSize" class="w-full border p-2 rounded text-sm sm:text-base">
+        <option value="256">256px（預設）</option>
+        <option value="128">128px</option>
+        <option value="512">512px</option>
+        <option value="1024">1024px</option>
+        <option value="2048">2048px</option>
+        <option value="4096">4096px</option>
+      </select>
     </div>
 
     <!-- 條碼選項 -->
@@ -89,6 +103,7 @@
     const commonInputSection = document.getElementById('commonInputSection');
     const barcodeTypeContainer = document.getElementById('barcodeTypeContainer');
     const wifiInputSection = document.getElementById('wifiInputSection');
+    const qrSizeContainer = document.getElementById('qrSizeContainer');
     const errorMessage = document.getElementById('errorMessage');
     const downloadSection = document.getElementById('downloadSection');
     const downloadLink = document.getElementById('downloadLink');
@@ -98,6 +113,7 @@
       commonInputSection.classList.toggle('hidden', type === 'wifi');
       barcodeTypeContainer.classList.toggle('hidden', type !== 'barcode');
       wifiInputSection.classList.toggle('hidden', type !== 'wifi');
+      qrSizeContainer.classList.toggle('hidden', type === 'barcode');
       errorMessage.classList.add('hidden');
       downloadSection.classList.add('hidden');
     });
@@ -109,26 +125,31 @@
 
     function generateCode() {
       const type = codeType.value;
-      document.getElementById('qrcodeCanvas').classList.add('hidden');
-      document.getElementById('barcodeSvg').classList.add('hidden');
+      const canvas = document.getElementById('qrcodeCanvas');
+      const barcodeSvg = document.getElementById('barcodeSvg');
+      canvas.classList.add('hidden');
+      barcodeSvg.classList.add('hidden');
       errorMessage.classList.add('hidden');
       downloadSection.classList.add('hidden');
 
       if (type === 'qrcode') {
         const text = document.getElementById('inputText').value;
+        const size = parseInt(document.getElementById('qrSize').value);
         if (!text) {
           showError('請輸入資料！');
           return;
         }
-        QRCode.toCanvas(document.getElementById('qrcodeCanvas'), text, { width: Math.min(window.innerWidth * 0.8, 256) }, function (error) {
+        QRCode.toCanvas(canvas, text, { width: size }, function (error) {
           if (error) {
             showError('生成 QR Code 失敗！');
             console.error(error);
             return;
           }
-          document.getElementById('qrcodeCanvas').classList.remove('hidden');
-          // 提供下載 QR 碼
-          const canvas = document.getElementById('qrcodeCanvas');
+          // 確保顯示時縮放而不變形
+          canvas.style.width = '100%';
+          canvas.style.height = 'auto';
+
+          canvas.classList.remove('hidden');
           downloadLink.href = canvas.toDataURL('image/png');
           downloadLink.download = 'qrcode.png';
           downloadSection.classList.remove('hidden');
@@ -148,10 +169,8 @@
             height: 100,
             fontSize: 18
           });
-          document.getElementById('barcodeSvg').classList.remove('hidden');
-          // 提供下載條碼
-          const svg = document.getElementById('barcodeSvg');
-          const svgData = new XMLSerializer().serializeToString(svg);
+          barcodeSvg.classList.remove('hidden');
+          const svgData = new XMLSerializer().serializeToString(barcodeSvg);
           const blob = new Blob([svgData], { type: 'image/svg+xml' });
           downloadLink.href = URL.createObjectURL(blob);
           downloadLink.download = 'barcode.svg';
@@ -164,6 +183,7 @@
         const ssid = document.getElementById('wifiSSID').value;
         const pwd = document.getElementById('wifiPassword').value;
         const enc = document.getElementById('wifiType').value;
+        const size = parseInt(document.getElementById('qrSize').value);
         if (!ssid) {
           showError('請輸入 Wi-Fi 名稱 (SSID)！');
           return;
@@ -174,15 +194,16 @@
         }
         const hidden = document.getElementById('wifiHidden').checked ? 'H:true;' : '';
         const wifiData = `WIFI:T:${enc};S:${ssid};P:${pwd};${hidden};`;
-        QRCode.toCanvas(document.getElementById('qrcodeCanvas'), wifiData, { width: Math.min(window.innerWidth * 0.8, 256) }, function (error) {
+        QRCode.toCanvas(canvas, wifiData, { width: size }, function (error) {
           if (error) {
             showError('生成 Wi-Fi QR Code 失敗！');
             console.error(error);
             return;
           }
-          document.getElementById('qrcodeCanvas').classList.remove('hidden');
-          // 提供下載 Wi-Fi QR 碼
-          const canvas = document.getElementById('qrcodeCanvas');
+          canvas.style.width = '100%';
+          canvas.style.height = 'auto';
+
+          canvas.classList.remove('hidden');
           downloadLink.href = canvas.toDataURL('image/png');
           downloadLink.download = 'wifi-qrcode.png';
           downloadSection.classList.remove('hidden');
