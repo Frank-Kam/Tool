@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <title>🧹 文字字數統計</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-xl mx-auto bg-white p-6 rounded-xl shadow">
+    <h1 class="text-2xl font-bold mb-4">🧹 文字字數統計</h1>
+    <textarea id="textInput" rows="10" class="w-full p-2 border rounded mb-4" placeholder="輸入文字..."></textarea>
+    <button onclick="analyzeText()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">統計</button>
+    <pre id="output" class="mt-4 whitespace-pre-wrap bg-gray-50 p-4 rounded shadow"></pre>
+
+    <script>
+      function analyzeText() {
+        const text = document.getElementById("textInput").value;
+        let zh = 0, en = 0, other = 0, punc = 0;
+
+        for (let ch of text) {
+          if (/[\u4e00-\u9fff]/.test(ch)) {
+            zh++;
+          } else if (/[A-Za-z]/.test(ch)) {
+            en++;
+          } else if (/\s/.test(ch)) {
+            // 空白不計算
+          } else {
+            other++;
+          }
+
+          // 判斷是否為標點符號
+          if (/[\p{P}\p{S}]/u.test(ch)) {
+            punc++;
+          }
+        }
+
+        document.getElementById("output").textContent =
+          `中文：${zh} 字\n` +
+          `英文：${en} 字\n` +
+          `其他語言或符號：${other} 字\n` +
+          `標點符號總數：${punc}\n` +
+          `總字數：${zh + en + other}`;
+      }
+    </script>
+  </div>
+</body>
+</html>

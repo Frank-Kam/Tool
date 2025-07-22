@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>QR / 條碼 / Wi-Fi 產生器</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.0/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+  <div class="max-w-xl mx-auto bg-white p-6 rounded-xl shadow">
+    <h1 class="text-2xl font-bold mb-4">QR / 條碼 / Wi-Fi 產生器</h1>
+
+    <label class="block mb-2 font-medium">選擇類型：</label>
+    <select id="codeType" class="w-full border p-2 rounded mb-4">
+      <option value="qrcode">QR Code</option>
+      <option value="wifi">Wi-Fi QR Code</option>
+      <option value="barcode">條碼</option>
+    </select>
+
+    <!-- 通用輸入區（QR + 條碼） -->
+    <div id="commonInputSection" class="mb-4">
+      <label class="block mb-2 font-medium">輸入資料：</label>
+      <input id="inputText" type="text" class="w-full border p-2 rounded" placeholder="輸入文字、數字、網址等">
+    </div>
+
+    <!-- 條碼選項 -->
+    <div id="barcodeTypeContainer" class="mb-4 hidden">
+      <label class="block mb-2 font-medium">條碼編碼：</label>
+      <select id="barcodeFormat" class="w-full border p-2 rounded">
+        <option value="CODE128">CODE128</option>
+        <option value="EAN13">EAN13</option>
+        <option value="UPC">UPC</option>
+      </select>
+    </div>
+
+    <!-- Wi-Fi 專用輸入區 -->
+    <div id="wifiInputSection" class="hidden mb-4 space-y-2">
+      <label class="block font-medium">Wi-Fi 名稱 (SSID)：</label>
+      <input id="wifiSSID" type="text" class="w-full border p-2 rounded">
+
+      <label class="block font-medium">密碼：</label>
+      <input id="wifiPassword" type="text" class="w-full border p-2 rounded">
+
+      <label class="block font-medium">加密類型：</label>
+      <select id="wifiType" class="w-full border p-2 rounded">
+        <option value="WPA">WPA/WPA2</option>
+        <option value="WEP">WEP</option>
+        <option value="nopass">無密碼</option>
+      </select>
+
+      <label class="inline-flex items-center mt-2">
+        <input id="wifiHidden" type="checkbox" class="mr-2"> 隱藏 SSID
+      </label>
+    </div>
+
+    <button onclick="generateCode()" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 mt-2">產生</button>
+
+    <div class="mt-6 text-center">
+      <canvas id="qrcodeCanvas" class="mx-auto hidden"></canvas>
+      <svg id="barcodeSvg" class="mx-auto hidden"></svg>
+    </div>
+  </div>
+
+  <script>
+    const codeType = document.getElementById('codeType');
+    const commonInputSection = document.getElementById('commonInputSection');
+    const barcodeTypeContainer = document.getElementById('barcodeTypeContainer');
+    const wifiInputSection = document.getElementById('wifiInputSection');
+
+    codeType.addEventListener('change', () => {
+      const type = codeType.value;
+
+      // 顯示或隱藏對應欄位
+      commonInputSection.classList.toggle('hidden', type === 'wifi');
+      barcodeTypeContainer.classList.toggle('hidden', type !== 'barcode');
+      wifiInputSection.classList.toggle('hidden', type !== 'wifi');
+    });
+
+    function generateCode() {
+      const type = codeType.value;
+      document.getElementById('qrcodeCanvas').classList.add('hidden');
+      document.getElementById('barcodeSvg').classList.add('hidden');
+
+      if (type === 'qrcode') {
+        const text = document.getElementById('inputText').value;
+        QRCode.toCanvas(document.getElementById('qrcodeCanvas'), text, { width: 256 }, function (error) {
+          if (error) console.error(error);
+          document.getElementById('qrcodeCanvas').classList.remove('hidden');
+        });
+      } else if (type === 'barcode') {
+        const text = document.getElementById('inputText').value;
+        const format = document.getElementById('barcodeFormat').value;
+        JsBarcode("#barcodeSvg", text, {
+          format: format,
+          displayValue: true,
+          width: 2,
+          height: 100,
+          fontSize: 18
+        });
+        document.getElementById('barcodeSvg').classList.remove('hidden');
+      } else if (type === 'wifi') {
+        const ssid = document.getElementById('wifiSSID').value;
+        const pwd = document.getElementById('wifiPassword').value;
+        const enc = document.getElementById('wifiType').value;
+        const hidden = document.getElementById('wifiHidden').checked ? 'H:true;' : '';
+        const wifiData = `WIFI:T:${enc};S:${ssid};P:${pwd};${hidden};`;
+        QRCode.toCanvas(document.getElementById('qrcodeCanvas'), wifiData, { width: 256 }, function (error) {
+          if (error) console.error(error);
+          document.getElementById('qrcodeCanvas').classList.remove('hidden');
+        });
+      }
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>亂數產生器</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+  <div class="max-w-xl mx-auto bg-white p-6 rounded-xl shadow space-y-4">
+    <h1 class="text-2xl font-bold">亂數產生器</h1>
+
+    <div class="space-y-2">
+      <label class="block font-medium">包含的字元：</label>
+      <label><input type="checkbox" id="includeUppercase" class="mr-2">大寫 (A-Z)</label><br>
+      <label><input type="checkbox" id="includeLowercase" class="mr-2">小寫 (a-z)</label><br>
+      <label><input type="checkbox" id="includeNumbers" class="mr-2" checked>數字 (0-9)</label><br>
+      <label><input type="checkbox" id="includeSymbols" class="mr-2">常見符號 (!?@-_%)</label>
+    </div>
+
+    <div class="space-y-2">
+      <label class="block font-medium mt-2">每組長度：</label>
+      <input id="lengthInput" type="number" class="w-full border p-2 rounded" value="16" min="1">
+
+      <label class="block font-medium">產生組數：</label>
+      <input id="countInput" type="number" class="w-full border p-2 rounded" value="5" min="1">
+    </div>
+
+    <button onclick="generateRandomStrings()" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700">
+      產生亂數
+    </button>
+
+    <div id="resultArea" class="mt-4 space-y-2"></div>
+  </div>
+
+  <script>
+    function generateRandomStrings() {
+      const uppercase = document.getElementById('includeUppercase').checked;
+      const lowercase = document.getElementById('includeLowercase').checked;
+      const numbers = document.getElementById('includeNumbers').checked;
+      const symbols = document.getElementById('includeSymbols').checked;
+      const length = parseInt(document.getElementById('lengthInput').value);
+      const count = parseInt(document.getElementById('countInput').value);
+      const resultArea = document.getElementById('resultArea');
+
+      let charset = '';
+      if (uppercase) charset += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      if (lowercase) charset += 'abcdefghijklmnopqrstuvwxyz';
+      if (numbers) charset += '0123456789';
+      if (symbols) charset += '!?@-_%';
+
+      if (!charset) {
+        resultArea.innerHTML = `<p class="text-red-600">請至少選一種字元類型。</p>`;
+        return;
+      }
+
+      const results = [];
+
+      for (let i = 0; i < count; i++) {
+        let chars = [];
+        for (let j = 0; j < length; j++) {
+          const randChar = charset[Math.floor(Math.random() * charset.length)];
+          chars.push(randChar);
+        }
+        // 打亂順序
+        const shuffled = chars.sort(() => Math.random() - 0.5).join('');
+        results.push(shuffled);
+      }
+
+      resultArea.innerHTML = results.map(r =>
+        `<div class="bg-gray-100 p-2 rounded border flex justify-between items-center">
+          <code class="text-blue-800 break-all">${r}</code>
+          <button onclick="navigator.clipboard.writeText('${r}')" class="text-sm text-blue-600 hover:underline ml-4">複製</button>
+        </div>`
+      ).join('');
+    }
+  </script>
+</body>
+</html>
