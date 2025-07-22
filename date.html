@@ -67,11 +67,13 @@
       if (includeStart) diffMs += 86400000;
       if (includeEnd) diffMs += 86400000;
 
-      const totalDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diffMs % (1000 * 60)) / 1000);
-      const milliseconds = diffMs % 1000;
+      const totalYears = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 365.25));
+      const remainingAfterYears = diffMs % (1000 * 60 * 60 * 24 * 365.25);
+      const totalDays = Math.floor(remainingAfterYears / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((remainingAfterYears % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((remainingAfterYears % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((remainingAfterYears % (1000 * 60)) / 1000);
+      const milliseconds = remainingAfterYears % 1000;
 
       const totalWeeks = (diffMs / (1000 * 60 * 60 * 24 * 7)).toFixed(2);
       const totalHours = Math.floor(diffMs / (1000 * 60 * 60));
@@ -80,7 +82,8 @@
 
       result.classList.remove('text-red-500');
       result.innerText = 
-        `相差 ${totalDays} 天 ${hours} 小時 ${minutes} 分鐘\n` +
+        `相差：\n` +
+        `${totalYears} 年 ${totalDays} 天 ${hours} 小時 ${minutes} 分鐘\n` +
         `約 ${totalWeeks} 週\n` +
         `共 ${totalHours} 小時，${totalMinutes} 分鐘\n` +
         `共 ${totalSeconds} 秒，${diffMs} 毫秒`;
