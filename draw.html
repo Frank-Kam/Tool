@@ -1,78 +1,180 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>抽籤工具</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body {
-      overscroll-behavior: none;
-    }
-    button {
-      min-height: 48px;
-    }
-    textarea, input[type="number"] {
-      font-size: 14px;
-    }
-    @media (min-width: 640px) {
-      textarea, input[type="number"] {
-        font-size: 16px;
-      }
-    }
+    canvas { max-width: 100%; }
   </style>
 </head>
 <body class="bg-gray-100 p-4 sm:p-8 min-h-screen">
-  <div class="max-w-xl mx-auto bg-white p-4 sm:p-6 rounded-xl shadow space-y-4">
-    <h1 class="text-xl sm:text-2xl font-bold">抽籤工具</h1>
+  <div class="max-w-5xl mx-auto bg-white p-4 sm:p-6 rounded-xl shadow space-y-4">
+    <h1 class="text-xl sm:text-2xl font-bold text-center">轉盤抽籤</h1>
 
-    <label class="block font-medium">輸入籤項（每行一個）：</label>
-    <textarea id="inputItems" class="w-full border p-2 rounded h-40 resize-y text-sm sm:text-base" placeholder="輸入每行一個籤項，例如：&#10;選項1&#10;選項2&#10;選項3" aria-label="輸入籤項"></textarea>
+    <div class="flex flex-col sm:flex-row sm:space-x-6 space-y-4 sm:space-y-0">
+      <!-- 左側轉盤 -->
+      <div class="flex-1 flex items-center justify-center">
+        <canvas id="wheel" width="300" height="300"></canvas>
+      </div>
 
-    <label class="block font-medium mt-2">抽出幾個：</label>
-    <input id="drawCount" type="number" class="w-full border p-2 rounded text-sm sm:text-base" value="1" min="1" aria-label="選擇抽出數量">
+      <!-- 右側輸入與按鈕 -->
+      <div class="flex-1 space-y-4">
+        <div>
+          <label class="block font-medium text-left mb-1">輸入籤項（每行一個）：</label>
+          <textarea id="inputItems" class="w-full border p-2 rounded h-40 resize-y text-sm sm:text-base"
+            placeholder="拖動右下角可以拉伸輸入框" aria-label="輸入籤項"></textarea>
+        </div>
 
-    <button onclick="drawLots()" class="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 text-sm sm:text-base">
-      開始抽籤
-    </button>
+        <div class="space-y-2">
+          <button onclick="spinWheel()" id="spinBtn"
+            class="w-full bg-green-600 text-white p-2 rounded hover:bg-green-700 text-sm sm:text-base disabled:opacity-50"
+            disabled>
+            🎯 開始
+          </button>
 
-    <div id="resultArea" class="mt-4 text-center"></div>
+          <button onclick="resetAll()" id="resetBtn"
+            class="w-full bg-gray-300 text-gray-800 p-2 rounded hover:bg-gray-400 text-sm sm:text-base">
+            🔄 清除
+          </button>
+        </div>
+
+        <div id="resultArea" class="mt-2 text-lg font-bold text-green-700 text-center"></div>
+      </div>
+    </div>
   </div>
 
   <script>
-    function drawLots() {
-      const raw = document.getElementById('inputItems').value;
-      const count = parseInt(document.getElementById('drawCount').value);
-      const resultArea = document.getElementById('resultArea');
+    const canvas = document.getElementById('wheel');
+    const ctx = canvas.getContext('2d');
+    const textarea = document.getElementById('inputItems');
+    const spinBtn = document.getElementById('spinBtn');
+    const resultArea = document.getElementById('resultArea');
 
-      let items = raw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
-      if (items.length === 0) {
-        resultArea.innerHTML = `<p class="text-red-600">請輸入至少一個籤項！</p>`;
-        return;
-      }
-      if (count < 1) {
-        resultArea.innerHTML = `<p class="text-red-600">抽出數量必須至少為 1！</p>`;
-        return;
-      }
-      if (items.length < count) {
-        resultArea.innerHTML = `<p class="text-red-600">項目數不足，無法抽出 ${count} 筆。</p>`;
-        return;
+    let items = [];
+    let angle = 0;
+    let spinning = false;
+
+    textarea.addEventListener('input', () => {
+      items = textarea.value.split('\n').map(s => s.trim()).filter(Boolean);
+      drawRotatedWheel(angle);
+      spinBtn.disabled = items.length < 2;
+    });
+
+    function drawWheelContent(rotationAngle = 0) {
+      const radius = canvas.width / 2;
+      ctx.save();
+      ctx.translate(radius, radius);
+      ctx.rotate(rotationAngle);
+
+      const anglePer = 2 * Math.PI / items.length;
+
+      for (let i = 0; i < items.length; i++) {
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.fillStyle = `hsl(${(360 / items.length) * i}, 80%, 70%)`;
+        ctx.arc(0, 0, radius, i * anglePer, (i + 1) * anglePer);
+        ctx.closePath();
+        ctx.fill();
+
+        const text = items[i];
+        const angleMid = (i + 0.5) * anglePer;
+
+        ctx.save();
+        ctx.rotate(angleMid);
+
+        const textRadius = radius * 0.75;
+        let fontSize = radius * 0.18;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#000';
+
+        while (fontSize > 10) {
+          ctx.font = `bold ${fontSize}px sans-serif`;
+          const metrics = ctx.measureText(text);
+          if (metrics.width < anglePer * textRadius * 0.95) break;
+          fontSize -= 1;
+        }
+
+        ctx.font = `bold ${fontSize}px sans-serif`;
+        ctx.fillText(text, textRadius, 0);
+        ctx.restore();
       }
 
-      // Fisher-Yates 洗牌算法
-      for (let i = items.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [items[i], items[j]] = [items[j], items[i]];
-      }
-      let selected = items.slice(0, count);
-
-      resultArea.innerHTML = `
-        <h2 class="text-lg sm:text-xl font-bold text-green-700">🎉 抽籤結果：</h2>
-        <ul class="list-disc list-inside mt-2 space-y-1">
-          ${selected.map(item => `<li class="text-base sm:text-lg">${item}</li>`).join('')}
-        </ul>
-      `;
+      ctx.restore();
     }
+
+    function drawPointer() {
+      const radius = canvas.width / 2;
+      ctx.beginPath();
+      ctx.moveTo(radius - 10, 0);
+      ctx.lineTo(radius + 10, 0);
+      ctx.lineTo(radius, 20);
+      ctx.closePath();
+      ctx.fillStyle = 'red';
+      ctx.fill();
+    }
+
+    function drawRotatedWheel(a) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawWheelContent(a);
+      drawPointer();
+    }
+
+    function spinWheel() {
+      if (spinning || items.length < 2) return;
+      spinning = true;
+      spinBtn.disabled = true;
+      resultArea.textContent = '';
+
+      let duration = 5000;
+      let start = null;
+      let totalRotation = Math.random() * Math.PI * 6 + Math.PI * 10;
+      let lastAngle = angle;
+
+      function animate(timestamp) {
+        if (!start) start = timestamp;
+        const elapsed = timestamp - start;
+        const progress = Math.min(elapsed / duration, 1);
+
+        const easedProgress = progress < 0.5
+          ? 4 * progress ** 3
+          : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+
+        angle = lastAngle + totalRotation * easedProgress;
+        drawRotatedWheel(angle);
+
+        if (progress < 1) {
+          requestAnimationFrame(animate);
+        } else {
+          angle %= 2 * Math.PI;
+          spinning = false;
+          spinBtn.disabled = false;
+          showResult();
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    function showResult() {
+      const segmentAngle = 2 * Math.PI / items.length;
+      const index = (items.length - Math.floor((angle + segmentAngle / 2) / segmentAngle)) % items.length;
+      const selected = items[index];
+      resultArea.textContent = `結果：「${selected}」`;
+    }
+
+    function resetAll() {
+      textarea.value = '';
+      items = [];
+      angle = 0;
+      resultArea.textContent = '';
+      spinBtn.disabled = true;
+      drawRotatedWheel(0);
+    }
+
+    drawRotatedWheel(0);
   </script>
 </body>
 </html>
