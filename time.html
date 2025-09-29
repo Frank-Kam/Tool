@@ -12,7 +12,7 @@
   <h1 class="text-2xl font-bold mb-4">UTC 計時器</h1>
 
   <div id="guestLinkContainer" class="mb-2 hidden">
-    <span class="font-semibold">同步 ID (是 UTC 2 Base64 喵)：</span>
+    <span class="font-semibold">同步 ID (Base64)：</span>
     <div id="guestLink" class="break-all bg-gray-100 p-2 rounded mt-1 font-mono"></div>
   </div>
 
@@ -28,7 +28,6 @@
 </div>
 
 <script>
-let seconds = 0;
 let running = false;
 let startTimeUTC = null;
 
@@ -37,12 +36,15 @@ const urlHash = location.hash.substring(1);
 const isGuest = !!urlHash;
 
 if(isGuest){
-  document.getElementById('controlBtns').style.display='none';
-  startTimeUTC = parseInt(urlHash);
-  document.getElementById('guestLinkContainer').classList.remove('hidden');
-  // 顯示 base64 連結
-  const base64Link = btoa(location.origin + location.pathname + '#' + startTimeUTC);
-  document.getElementById('guestLink').textContent = base64Link;
+  try {
+    const decodedTime = atob(urlHash); // Base64 解碼
+    startTimeUTC = parseInt(decodedTime, 10);
+    document.getElementById('controlBtns').style.display='none';
+    document.getElementById('guestLinkContainer').classList.remove('hidden');
+    document.getElementById('guestLink').textContent = location.origin + location.pathname + '#' + urlHash;
+  } catch(e){
+    alert('同步連結錯誤');
+  }
 }
 
 function formatTime(sec){
@@ -51,12 +53,14 @@ function formatTime(sec){
   const s = String(sec%60).padStart(2,'0');
   return `${h}:${m}:${s}`;
 }
+
 function updateDisplay(){
   if(startTimeUTC){
     const elapsed = Math.floor((Date.now() - startTimeUTC)/1000);
     document.getElementById('timeDisplay').textContent = formatTime(elapsed);
   }
 }
+
 setInterval(updateDisplay,1000);
 updateDisplay();
 
@@ -66,7 +70,8 @@ document.getElementById('generateBtn').addEventListener('click', async ()=>{
     alert('請先開始計時');
     return;
   }
-  const link = location.origin + location.pathname + '#' + startTimeUTC;
+  const encodedTime = btoa(startTimeUTC.toString());
+  const link = location.origin + location.pathname + '#' + encodedTime;
   try{
     await navigator.clipboard.writeText(link);
     alert('同步連結已生成並複製到剪貼簿');
@@ -75,6 +80,7 @@ document.getElementById('generateBtn').addEventListener('click', async ()=>{
   }
 });
 
+// 控制按鈕 (非 Guest)
 if(!isGuest){
   document.getElementById('startBtn').addEventListener('click', ()=>{
     if(!startTimeUTC){ startTimeUTC = Date.now(); }
@@ -88,6 +94,7 @@ if(!isGuest){
   });
 }
 
+// 自動更新
 setInterval(()=>{
   if(running && startTimeUTC){
     updateDisplay();
@@ -97,3 +104,4 @@ setInterval(()=>{
 
 </body>
 </html>
+
