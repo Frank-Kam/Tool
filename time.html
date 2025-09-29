@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>計時器</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col items-center justify-center p-4">
+
+<div class="max-w-xl w-full bg-white p-6 rounded-xl shadow">
+  <h1 class="text-2xl font-bold mb-4">UTC 計時器</h1>
+
+  <div id="guestLinkContainer" class="mb-2 hidden">
+    <span class="font-semibold">同步 ID (是 UTC 2 Base64 喵)：</span>
+    <div id="guestLink" class="break-all bg-gray-100 p-2 rounded mt-1 font-mono"></div>
+  </div>
+
+  <div id="controlBtns" class="flex gap-2 mb-2">
+    <button id="startBtn" class="px-4 py-2 bg-green-600 text-white rounded">開始計時</button>
+    <button id="pauseBtn" class="px-4 py-2 bg-red-600 text-white rounded">暫停</button>
+    <button id="resetBtn" class="px-4 py-2 bg-yellow-500 text-white rounded">重置</button>
+    <button id="generateBtn" class="px-4 py-2 bg-blue-600 text-white rounded">生成同步連結</button>
+  </div>
+
+  <h2 class="mt-4 font-semibold">計時器</h2>
+  <div id="timeDisplay" class="text-3xl font-mono">00:00:00</div>
+</div>
+
+<script>
+let seconds = 0;
+let running = false;
+let startTimeUTC = null;
+
+// 判斷 Guest
+const urlHash = location.hash.substring(1);
+const isGuest = !!urlHash;
+
+if(isGuest){
+  document.getElementById('controlBtns').style.display='none';
+  startTimeUTC = parseInt(urlHash);
+  document.getElementById('guestLinkContainer').classList.remove('hidden');
+  // 顯示 base64 連結
+  const base64Link = btoa(location.origin + location.pathname + '#' + startTimeUTC);
+  document.getElementById('guestLink').textContent = base64Link;
+}
+
+function formatTime(sec){
+  const h = String(Math.floor(sec/3600)).padStart(2,'0');
+  const m = String(Math.floor((sec%3600)/60)).padStart(2,'0');
+  const s = String(sec%60).padStart(2,'0');
+  return `${h}:${m}:${s}`;
+}
+function updateDisplay(){
+  if(startTimeUTC){
+    const elapsed = Math.floor((Date.now() - startTimeUTC)/1000);
+    document.getElementById('timeDisplay').textContent = formatTime(elapsed);
+  }
+}
+setInterval(updateDisplay,1000);
+updateDisplay();
+
+// 生成同步連結
+document.getElementById('generateBtn').addEventListener('click', async ()=>{
+  if(!startTimeUTC){
+    alert('請先開始計時');
+    return;
+  }
+  const link = location.origin + location.pathname + '#' + startTimeUTC;
+  try{
+    await navigator.clipboard.writeText(link);
+    alert('同步連結已生成並複製到剪貼簿');
+  } catch(e){
+    prompt('請手動複製連結', link);
+  }
+});
+
+if(!isGuest){
+  document.getElementById('startBtn').addEventListener('click', ()=>{
+    if(!startTimeUTC){ startTimeUTC = Date.now(); }
+    running = true;
+  });
+  document.getElementById('pauseBtn').addEventListener('click', ()=>{ running=false; });
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    running=false;
+    startTimeUTC = Date.now();
+    updateDisplay();
+  });
+}
+
+setInterval(()=>{
+  if(running && startTimeUTC){
+    updateDisplay();
+  }
+},1000);
+</script>
+
+</body>
+</html>
